@@ -166,6 +166,11 @@ func JWT_token(w http.ResponseWriter, r *http.Request) {
 
 	Login := r.FormValue("Login")
 	Password := r.FormValue("Password")
+	tmpl, err := template.ParseFiles("./ui/html/registr.html") // serving the index.html file
+	if err != nil {
+		log.Fatal(err)
+	}
+	tmpl.Execute(w, nil)
 	w.Write([]byte(""))
 	if Login != "" && Password != "" && Login != registr_login_povrot && Password != registr_password_povrot {
 		b := registr(Login, Password)
@@ -177,11 +182,6 @@ func JWT_token(w http.ResponseWriter, r *http.Request) {
 		registr_login_povrot = Login
 		registr_password_povrot = Password
 	}
-	tmpl, err := template.ParseFiles("./ui/html/registr.html") // serving the index.html file
-	if err != nil {
-		log.Fatal(err)
-	}
-	tmpl.Execute(w, nil)
 }
 
 func login(w http.ResponseWriter, r *http.Request) {
