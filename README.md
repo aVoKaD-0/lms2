@@ -1,6 +1,6 @@
 Для проверки моего проекта вам потребуется [PostgreSQL](https://www.postgresql.org/download/), [кому сложно установить](https://www.youtube.com/watch?v=aLDMDR8FKuk)
 
-в файлах struct.go lms2/cmd/server/struct.go и lms2/cmd/server/struct.go имеются 
+в файлах struct.go (lms2/cmd/server/struct.go и lms2/cmd/server/struct.go) имеются 
 
     var dbpassword = ваш пароль от бд
 
