@@ -1,7 +1,6 @@
 package main
 
 import (
-	"bufio"
 	"context"
 	"database/sql"
 	"encoding/json"
@@ -11,10 +10,8 @@ import (
 	"io"
 	"log"
 	"net/http"
-	"os"
 	"regexp"
 	"strconv"
-	"sync"
 	"time"
 	"unicode/utf8"
 
@@ -52,9 +49,6 @@ var registr_login_povrot = ""
 
 var IsLetter = regexp.MustCompile(`^[0-9a-zA-Z]`).MatchString
 
-var mx = sync.Mutex{}
-var mx2 = sync.Mutex{}
-
 var conn, _ = grpc.Dial(fmt.Sprintf("%s:%s", "localhost", "5000"), grpc.WithTransportCredentials(insecure.NewCredentials()))
 var grpcClient = pb.NewKalkulatorServiceClient(conn)
 
@@ -84,34 +78,40 @@ func client(w http.ResponseWriter, r *http.Request) {
 		log.Println("Error occured while reading cookie")
 		w.Write([]byte("Спрева войдите в профиль, если вы не зарегестрированны передите на http://localhost:8081/registr.html, иначе на http://localhost:8081/login.html"))
 	} else {
-		tmpl, err := template.ParseFiles("./ui/html/expression.html") // serving the index.html file
-		if err != nil {
-			log.Println(err, "a")
-		}
-		tmpl.Execute(w, nil)
-		cookie := &http.Cookie{
-			Name:    "token",
-			Value:   tokenCookie.Value,
-			Expires: time.Now().Add(5 * time.Minute),
-		}
-		http.SetCookie(w, cookie)
 		fmt.Println(tokenCookie.Value)
 		token := token_db(tokenCookie.Value)
+		fmt.Println(token, tokenCookie.Value, "12312312")
 		if token != tokenCookie.Value {
 			http.SetCookie(w, &http.Cookie{
 				Name:    "token",
 				Value:   token,
 				Expires: time.Now().Add(5 * time.Minute),
 			})
+			tmpl, err := template.ParseFiles("./ui/html/expression.html") // serving the index.html file
+			if err != nil {
+				log.Println(err, "a")
+			}
+			tmpl.Execute(w, nil)
 		} else if token == "error" {
+			tmpl, err := template.ParseFiles("./ui/html/expression.html") // serving the index.html file
+			if err != nil {
+				log.Println(err, "a")
+			}
+			tmpl.Execute(w, nil)
 			_, err = io.WriteString(w, html.EscapeString("сперва авторизуйтесь"))
+		} else {
+			tmpl, err := template.ParseFiles("./ui/html/expression.html") // serving the index.html file
+			if err != nil {
+				log.Println(err, "a")
+			}
+			tmpl.Execute(w, nil)
 		}
 
 		_, err = json.Marshal(data)
 		if err != nil {
 			log.Println(err)
 		}
-		login := login_db(cookie.Value)
+		login := login_db(token)
 		first_exp := first_db(login)
 		fmt.Println(first_exp, utf8.RuneCountInString(first_exp))
 		if data.equation != string(first_exp) && data.equation != "" {
@@ -131,18 +131,28 @@ func client(w http.ResponseWriter, r *http.Request) {
 				time.Sleep(1 * time.Second)
 			}
 		}
-		mx2.Lock()
-		fileWrite(login)
-		f, err := os.Open("otvet.txt")
+		db, err := sql.Open("postgres", "user=postgres password="+dbpassword+" host=localhost dbname="+dbname+" sslmode=disable")
 		if err != nil {
-			f, _ = os.Create("otvet.txt")
+			// db.Close()
+			log.Fatalf("Error: Unable to connect to database: %v", err)
 		}
-		s := bufio.NewScanner(f)
-		for s.Scan() {
-			_, err = io.WriteString(w, html.EscapeString(s.Text())+`<br/>`)
-			// Check err.
+		defer db.Close()
+		rows, err := db.Query("SELECT * FROM lms.user_expression")
+		var (
+			id         int
+			expression string
+			status     string
+			Login      string
+		)
+		if err != nil {
+			panic(err)
 		}
-		mx2.Unlock()
+		for rows.Next() {
+			rows.Scan(&id, &expression, &status, &Login)
+			if login == Login {
+				io.WriteString(w, html.EscapeString(strconv.Itoa(id)+" "+expression+" "+status)+`<br/>`)
+			}
+		}
 	}
 	return
 }
@@ -217,7 +227,7 @@ func login(w http.ResponseWriter, r *http.Request) {
 				cookie := &http.Cookie{
 					Name:    "token",
 					Value:   tokenString,
-					Expires: time.Now().Add(5 * time.Minute),
+					Expires: time.Now().Add(100 * time.Second),
 				}
 				http.SetCookie(w, cookie)
 				tmpl, err := template.ParseFiles("./ui/html/login.html") // serving the index.html file
@@ -256,11 +266,6 @@ func time_New(w http.ResponseWriter, r *http.Request) {
 		log.Println("Error occured while reading cookie")
 		w.Write([]byte("Спрева войдите в профиль, если вы не зарегестрированны передите на http://localhost:8081/registr.html, иначе на http://localhost:8081/login.html"))
 	} else {
-		tmpl, err := template.ParseFiles("./ui/html/time.html") // serving the index.html file
-		if err != nil {
-			log.Fatal(err)
-		}
-		tmpl.Execute(w, nil)
 		cookie := &http.Cookie{
 			Name:    "token",
 			Value:   tokenCookie.Value,
@@ -268,22 +273,33 @@ func time_New(w http.ResponseWriter, r *http.Request) {
 		}
 		http.SetCookie(w, cookie)
 		token := token_db(tokenCookie.Value)
-		login := login_db(token)
-		fmt.Println(login, "login2", token)
 		if token != tokenCookie.Value {
-			tmpl, err := template.ParseFiles("./ui/html/time.html") // serving the index.html file
-			if err != nil {
-				log.Fatal(err)
-			}
-			tmpl.Execute(w, nil)
 			http.SetCookie(w, &http.Cookie{
 				Name:    "token",
 				Value:   token,
 				Expires: time.Now().Add(5 * time.Minute),
 			})
+			tmpl, err := template.ParseFiles("./ui/html/time.html") // serving the index.html file
+			if err != nil {
+				log.Fatal(err)
+			}
+			tmpl.Execute(w, nil)
 		} else if token == "error" {
+			tmpl, err := template.ParseFiles("./ui/html/time.html") // serving the index.html file
+			if err != nil {
+				log.Fatal(err)
+			}
+			tmpl.Execute(w, nil)
 			_, err = io.WriteString(w, html.EscapeString("сперва авторизуйтесь"))
+		} else {
+			tmpl, err := template.ParseFiles("./ui/html/time.html") // serving the index.html file
+			if err != nil {
+				log.Fatal(err)
+			}
+			tmpl.Execute(w, nil)
 		}
+		login := login_db(token)
+		fmt.Println(login, "login2", token)
 
 		db, err := sql.Open("postgres", "user=postgres password="+dbpassword+" host=localhost dbname="+dbname+" sslmode=disable")
 		if err != nil {
@@ -349,6 +365,10 @@ func home(w http.ResponseWriter, r *http.Request) {
 	tmpl.Execute(w, nil)
 }
 
+func Test(w http.ResponseWriter, r *http.Request) {
+
+}
+
 func main() {
 	// закроем соединение, когда выйдем из функции
 	defer conn.Close()
@@ -359,6 +379,7 @@ func main() {
 	mux.HandleFunc("/registr.html", JWT_token)
 	mux.HandleFunc("/time.html", time_New)
 	mux.HandleFunc("/login.html", login)
+	mux.HandleFunc("/test", Test)
 	fileServer := http.FileServer(http.Dir("./ui/static/"))
 
 	mux.Handle("/static/", http.StripPrefix("/static", fileServer))

@@ -4,8 +4,6 @@ import (
 	"database/sql"
 	"fmt"
 	"log"
-	"os"
-	"strconv"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
@@ -20,38 +18,6 @@ type time_base struct {
 	d string
 	p string
 	m string
-}
-
-func fileWrite(Login string) {
-	db, err := sql.Open("postgres", "user=postgres password="+dbpassword+" host=localhost dbname="+dbname+" sslmode=disable")
-	if err != nil {
-		// db.Close()
-		log.Fatalf("Error: Unable to connect to database: %v", err)
-	}
-	defer db.Close()
-	f, _ := os.Create("otvet.txt")
-	rows, err := db.Query("SELECT * FROM lms.user_expression")
-	var (
-		sch        int
-		id         int
-		expression string
-		status     string
-		login      string
-	)
-	if err != nil {
-		panic(err)
-	}
-	for rows.Next() {
-		rows.Scan(&id, &expression, &status, &login)
-		if login == Login {
-			if sch == 0 {
-				f.Write([]byte(strconv.Itoa(id) + " " + expression + " " + status))
-			} else {
-				f.Write([]byte("\n" + strconv.Itoa(id) + " " + expression + " " + status))
-			}
-		}
-		sch++
-	}
 }
 
 func registr(login string, password string) string {
@@ -152,14 +118,14 @@ func NewToken(login string, password string) string {
 }
 
 func update_StatusToken_db(token string, login string) {
-	// time.Sleep(10 * time.Second)
+	time.Sleep(10 * time.Second)
 	db, err := sql.Open("postgres", "user=postgres password="+dbpassword+" host=localhost dbname="+dbname+" sslmode=disable")
 	if err != nil {
 		db.Close()
 		log.Fatalf("Error: Unable to connect to database: %v", err)
 	}
 	defer db.Close()
-	_, err = db.Exec("update lms.jwt_token set action = $1 WHERE token = $2", true, token)
+	_, err = db.Exec("update lms.jwt_token set action = $1 WHERE token = $2", false, token)
 	if err != nil {
 		fmt.Println(err, "Newtoken")
 	}
@@ -191,31 +157,45 @@ func token_db(token string) string {
 		log.Fatalf("Error: Unable to connect to database: %v", err)
 	}
 	defer db.Close()
-	rows, err := db.Query("SELECT * FROM lms.jwt_token")
+	row := db.QueryRow("SELECT * FROM lms.jwt_token WHERE token = $1", token)
 	if err != nil {
 		log.Print(err, " entrance")
 	}
-	for rows.Next() {
-		rows.Scan(&Login, &Token, &Action)
-		if Token == token && Action == false {
-			const hmacSampleSecret = "super_secret_signature"
-			now := time.Now()
-			token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
-				"name": Login,
-				"nbf":  now.Unix(),
-				"exp":  now.Add(5 * time.Minute).Unix(),
-				"iat":  now.Unix(),
-			})
-
-			tokenString, err := token.SignedString([]byte(hmacSampleSecret))
-			if err != nil {
-				panic(err)
-			}
-			update_StatusToken_db(tokenString, Login)
-			return tokenString
-		} else if Token == token && Action == true {
-			return token
+	row.Scan(&Login, &Token, &Action)
+	fmt.Println(Login, Token, Action, token, login)
+	if Token == token && Action == false {
+		var (
+			login2    string
+			password2 string
+		)
+		row := db.QueryRow("SELECT * FROM lms.jwt_users WHERE login = $1", Login)
+		if err != nil {
+			log.Print(err, " entrance")
 		}
+		row.Scan(&login2, &password2)
+		const hmacSampleSecret = "super_secret_signature"
+		now := time.Now()
+		token2 := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
+			"name": login2 + "_" + password2,
+			"nbf":  now.Unix(),
+			"exp":  now.Add(10 * time.Second).Unix(),
+			"iat":  now.Unix(),
+		})
+
+		tokenString, err := token2.SignedString([]byte(hmacSampleSecret))
+		if err != nil {
+			panic(err)
+		}
+		_, err = db.Exec("update lms.jwt_token set token = $1 WHERE login = $2", tokenString, login2)
+		if err != nil {
+			fmt.Println(err, "token_db")
+		}
+		go func(tokenString string, login string) {
+			update_StatusToken_db(tokenString, login)
+		}(tokenString, login2)
+		return tokenString
+	} else if Token == token && Action == true {
+		return token
 	}
 	return "error"
 }
