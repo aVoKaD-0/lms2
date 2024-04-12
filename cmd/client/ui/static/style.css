@@ -61,3 +61,11 @@ body {
     display: flex;
     box-shadow: 2px 2px 4px rgba(0, 0, 0, 0.4);
 }
+
+.nav-item2 {
+    color: coral;
+    text-decoration: none;
+    font-weight: 700;
+    font-size: 14px;
+    margin-right: 25px;
+}

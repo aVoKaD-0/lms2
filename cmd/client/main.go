@@ -341,13 +341,21 @@ func time_New(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+func home(w http.ResponseWriter, r *http.Request) {
+	tmpl, err := template.ParseFiles("./ui/html/home.html") // serving the index.html file
+	if err != nil {
+		log.Fatal(err)
+	}
+	tmpl.Execute(w, nil)
+}
+
 func main() {
 	// закроем соединение, когда выйдем из функции
 	defer conn.Close()
 	deleteTokenDB()
 	mux := http.NewServeMux()
 	mux.HandleFunc("/expression.html", client)
-	mux.HandleFunc("/", client)
+	mux.HandleFunc("/", home)
 	mux.HandleFunc("/registr.html", JWT_token)
 	mux.HandleFunc("/time.html", time_New)
 	mux.HandleFunc("/login.html", login)
