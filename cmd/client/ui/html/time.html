@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="/static/style.css">
+    <title>distributed calculator</title>
+</head>
+<body>
+    <div class="main">
+        <div class="header">
+            <div class="logo">
+                  <div class="logo_text">
+                    <h1><a>distributed calculator</a></h1>
+                  </div>
+              
+              </div>
+                
+    </div>
+</body>
+<body>
+    <div class="setting">
+        <p><a class="nav-item" href="expression.html">calculator</a></p>
+        <p><a class="nav-item" href="time.html">calculator setting</a></p>
+        <p><a class="nav-item" href="registr.html">registration</a></p>
+        <p><a class="nav-item" href="login.html">login</a></p>
+    </div>
+</body>
+<body>
+    <form action="">
+        <label>Operation executie time +</label>
+        <input type="text", name="p", id="2">
+        <br/>
+        <label>Operation executie time -</label>
+        <input type="text", name="m", id="3">
+        <br/>
+        <label>Operation executie time *</label>
+        <input type="text", name="u", id="4">
+        <br/>
+        <label>Operation executie time /</label>
+        <input type="text", name="d", id="5">
+        <br/>
+        <button id="1">отправить</button>
+    </form>
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+            btn = document.getElementById("1");
+            btn.onclick = function() {
+                p = document.getElementById("2").value;
+                m = document.getElementById("3").value;
+                u = document.getElementById("4").value;
+                d = document.getElementById("5").value;
+                let user = {
+                    p: p,
+                    m: m,
+                    u: u,
+                    d: d
+                };
+                fetch("http://localhost:8081/expression.html", {
+                    method: "POST",
+                    body: JSON.stringify(user)
+                })
+            }
+        })
+    </script>
+</body>
+</html>
