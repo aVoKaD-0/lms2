@@ -227,7 +227,7 @@ func login(w http.ResponseWriter, r *http.Request) {
 				cookie := &http.Cookie{
 					Name:    "token",
 					Value:   tokenString,
-					Expires: time.Now().Add(100 * time.Second),
+					Expires: time.Now().Add(5 * time.Minute),
 				}
 				http.SetCookie(w, cookie)
 				tmpl, err := template.ParseFiles("./ui/html/login.html") // serving the index.html file
@@ -297,63 +297,63 @@ func time_New(w http.ResponseWriter, r *http.Request) {
 				log.Fatal(err)
 			}
 			tmpl.Execute(w, nil)
-		}
-		login := login_db(token)
-		fmt.Println(login, "login2", token)
+			login := login_db(token)
+			fmt.Println(login, "login2", token)
 
-		db, err := sql.Open("postgres", "user=postgres password="+dbpassword+" host=localhost dbname="+dbname+" sslmode=disable")
-		if err != nil {
-			db.Close()
-			log.Fatalf("Error: Unable to connect to database: %v", err)
-		}
-		defer db.Close()
-		u, d, p, m, Login := 1, 1, 1, 1, ""
-		rows, err := db.Query("SELECT * FROM lms.time")
-		for rows.Next() {
-			rows.Scan(&u, &d, &p, &m, &Login)
-			if Login == login {
-				break
-			}
-		}
-		u2 := r.FormValue("u")
-		d2 := r.FormValue("d")
-		p2 := r.FormValue("p")
-		m2 := r.FormValue("m")
-
-		u3 := strconv.Itoa(u)
-		d3 := strconv.Itoa(d)
-		p3 := strconv.Itoa(p)
-		m3 := strconv.Itoa(m)
-
-		if u2 != "" {
-			u3 = u2
-		}
-		if d2 != "" {
-			d3 = d2
-		}
-		if p2 != "" {
-			p3 = p2
-		}
-		if m2 != "" {
-			m3 = m2
-		}
-		fmt.Println(u, d, p, m, "a", u2, d2, p2, m2, "b", u3, d3, p3, m3)
-		if login == Login {
-			_, err = db.Exec("update lms.time set u = $1, d = $2, p = $3, m = $4 WHERE login = $5", u3, d3, p3, m3, login)
+			db, err := sql.Open("postgres", "user=postgres password="+dbpassword+" host=localhost dbname="+dbname+" sslmode=disable")
 			if err != nil {
-				log.Println(err)
+				db.Close()
+				log.Fatalf("Error: Unable to connect to database: %v", err)
 			}
-		} else {
-			_, err = db.Exec("insert into lms.time (u, d, p, m, login) values ($1, $2, $3, $4, $5)", u3, d3, p3, m3, login)
-			if err != nil {
-				log.Println(err)
+			defer db.Close()
+			u, d, p, m, Login := 1, 1, 1, 1, ""
+			rows, err := db.Query("SELECT * FROM lms.time")
+			for rows.Next() {
+				rows.Scan(&u, &d, &p, &m, &Login)
+				if Login == login {
+					break
+				}
 			}
-		}
+			u2 := r.FormValue("u")
+			d2 := r.FormValue("d")
+			p2 := r.FormValue("p")
+			m2 := r.FormValue("m")
 
-		_, err = io.WriteString(w, html.EscapeString("Время для +: "+p3)+`<br/>`)
-		_, err = io.WriteString(w, html.EscapeString("Время для -: "+m3)+`<br/>`)
-		_, err = io.WriteString(w, html.EscapeString("Время для *: "+u3)+`<br/>`)
-		_, err = io.WriteString(w, html.EscapeString("Время для /: "+d3)+`<br/>`)
+			u3 := strconv.Itoa(u)
+			d3 := strconv.Itoa(d)
+			p3 := strconv.Itoa(p)
+			m3 := strconv.Itoa(m)
+
+			if u2 != "" {
+				u3 = u2
+			}
+			if d2 != "" {
+				d3 = d2
+			}
+			if p2 != "" {
+				p3 = p2
+			}
+			if m2 != "" {
+				m3 = m2
+			}
+			fmt.Println(u, d, p, m, "a", u2, d2, p2, m2, "b", u3, d3, p3, m3)
+			if login == Login {
+				_, err = db.Exec("update lms.time set u = $1, d = $2, p = $3, m = $4 WHERE login = $5", u3, d3, p3, m3, login)
+				if err != nil {
+					log.Println(err)
+				}
+			} else {
+				_, err = db.Exec("insert into lms.time (u, d, p, m, login) values ($1, $2, $3, $4, $5)", u3, d3, p3, m3, login)
+				if err != nil {
+					log.Println(err)
+				}
+			}
+
+			_, err = io.WriteString(w, html.EscapeString("Время для +: "+p3)+`<br/>`)
+			_, err = io.WriteString(w, html.EscapeString("Время для -: "+m3)+`<br/>`)
+			_, err = io.WriteString(w, html.EscapeString("Время для *: "+u3)+`<br/>`)
+			_, err = io.WriteString(w, html.EscapeString("Время для /: "+d3)+`<br/>`)
+		}
 	}
 }
 

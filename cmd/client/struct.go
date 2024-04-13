@@ -133,6 +133,27 @@ func update_StatusToken_db(token string, login string) {
 	if err != nil {
 		fmt.Println(err, "Newtoken")
 	}
+	go func(token string) {
+		time.Sleep(30 * time.Second)
+		db, err := sql.Open("postgres", "user=postgres password="+dbpassword+" host=localhost dbname="+dbname+" sslmode=disable")
+		if err != nil {
+			db.Close()
+			log.Fatalf("Error: Unable to connect to database: %v", err)
+		}
+		defer db.Close()
+		row := db.QueryRow("SELECT * FROM lms.jwt_token WHERE token = $1", token)
+		var (
+			login  string
+			token2 string
+			action string
+		)
+		err = row.Scan(&login, &token2, &action)
+		if err == nil {
+			if token2 == token {
+				_, _ = db.Exec("delete FROM lms.jwt_token WHERE token = $1", token)
+			}
+		}
+	}(token)
 }
 
 func deleteTokenDB() {
@@ -164,6 +185,7 @@ func token_db(token string) string {
 	row.Scan(&Login, &Token, &Action)
 	fmt.Println(Login, Token, Action, token, login)
 	if Token == token && Action == false {
+		// time.Sleep(5 * time.Second)
 		var (
 			login2    string
 			password2 string
@@ -186,7 +208,7 @@ func token_db(token string) string {
 		if err != nil {
 			panic(err)
 		}
-		_, err = db.Exec("update lms.jwt_token set token = $1 WHERE login = $2", tokenString, login2)
+		_, err = db.Exec("update lms.jwt_token set token = $1, action = $3 WHERE login = $2", tokenString, login2, true)
 		if err != nil {
 			fmt.Println(err, "token_db")
 		}
