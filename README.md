@@ -15,6 +15,7 @@
     go get github.com/my-name/grpc-service-example/proto
     go get github.com/golang-jwt/jwt/v5
     go get google.golang.org/grpc/credentials/insecure
+    go get github.com/gomodule/redigo/redis
 
 После всего продеяного перейдите 
     
@@ -24,6 +25,10 @@
 и в обеих пропишите 
 
     go run .
+
+Имеется хост http://localhost:8000/test.html 
+
+    Здесь при переходе в него будут показаны разные выражения, какие идут, а какие нет
 
 После перейдите на http://localhost:8000/ 
 
