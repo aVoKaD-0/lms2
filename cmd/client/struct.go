@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"fmt"
 	"log"
+	"strconv"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
@@ -19,6 +20,8 @@ type time_base struct {
 	p string
 	m string
 }
+
+var test_name = 0
 
 func registr(login string, password string) string {
 	var (
@@ -164,6 +167,7 @@ func deleteTokenDB() {
 	}
 	defer db.Close()
 	_, _ = db.Exec("DELETE FROM lms.jwt_token")
+	_, _ = db.Exec("DELETE FROM lms.test_token")
 }
 
 func token_db(token string) string {
@@ -309,4 +313,45 @@ func NEWfirst_db(login string, exp string) {
 	if err != nil {
 		fmt.Println(err, "Newfirst")
 	}
+}
+
+func NewToken_test() string {
+	db, err := sql.Open("postgres", "user=postgres password="+dbpassword+" host=localhost dbname="+dbname+" sslmode=disable")
+	if err != nil {
+		db.Close()
+		log.Fatalf("Error: Unable to connect to database: %v", err)
+	}
+	defer db.Close()
+
+	const hmacSampleSecret = "super_secret_signature"
+	now := time.Now()
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
+		"name": "test" + strconv.Itoa(test_name),
+		"nbf":  now.Unix(),
+		"exp":  now.Add(10 * time.Minute).Unix(),
+		"iat":  now.Unix(),
+	})
+
+	tokenString, err := token.SignedString([]byte(hmacSampleSecret))
+	if err != nil {
+		panic(err)
+	}
+
+	fmt.Println("token string:", tokenString)
+
+	_, err = db.Exec("insert into lms.test_token (login, token) values ($1, $2)", "test"+strconv.Itoa(test_name), tokenString)
+	if err != nil {
+		fmt.Println(err, "Newtoken_test")
+	}
+	go func(tokenString string) {
+		time.Sleep(10 * time.Minute)
+		db, err := sql.Open("postgres", "user=postgres password="+dbpassword+" host=localhost dbname="+dbname+" sslmode=disable")
+		if err != nil {
+			db.Close()
+			log.Fatalf("Error: Unable to connect to database: %v", err)
+		}
+		defer db.Close()
+		_, _ = db.Exec("DELETE FROM lms.test_token WHERE token = $1", tokenString)
+	}(tokenString)
+	return tokenString
 }

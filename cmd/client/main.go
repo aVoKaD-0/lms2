@@ -15,6 +15,8 @@ import (
 	"time"
 	"unicode/utf8"
 
+	"github.com/golang-jwt/jwt/v5"
+	"github.com/gomodule/redigo/redis"
 	pb "github.com/my-name/grpc-service-example/proto"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure" // для упрощения не будем использовать SSL/TLS аутентификация
@@ -76,6 +78,11 @@ func client(w http.ResponseWriter, r *http.Request) {
 	// r.AddCookie(tokenCookie)
 	if err != nil {
 		log.Println("Error occured while reading cookie")
+		tmpl, err := template.ParseFiles("./ui/html/expression.html") // serving the index.html file
+		if err != nil {
+			log.Println(err, "a")
+		}
+		tmpl.Execute(w, nil)
 		w.Write([]byte("Спрева войдите в профиль, если вы не зарегестрированны передите на http://localhost:8081/registr.html, иначе на http://localhost:8081/login.html"))
 	} else {
 		fmt.Println(tokenCookie.Value)
@@ -366,7 +373,127 @@ func home(w http.ResponseWriter, r *http.Request) {
 }
 
 func Test(w http.ResponseWriter, r *http.Request) {
+	db, err := sql.Open("postgres", "user=postgres password="+dbpassword+" host=localhost dbname="+dbname+" sslmode=disable")
+	if err != nil {
+		db.Close()
+		log.Fatalf("Error: Unable to connect to database: %v", err)
+	}
+	defer db.Close()
 
+	tokenCookie, err2 := r.Cookie("token")
+	login := "almaza"
+	if err2 == nil {
+		const hmacSampleSecret = "super_secret_signature"
+		tokenFromString, err := jwt.Parse(tokenCookie.Value, func(token *jwt.Token) (interface{}, error) {
+			if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+				fmt.Println("unexpected signing method: %v", token.Header["alg"])
+			}
+
+			return []byte(hmacSampleSecret), nil
+		})
+
+		if err != nil {
+			fmt.Println(err)
+		}
+
+		claims, _ := tokenFromString.Claims.(jwt.MapClaims)
+
+		login, err = redis.String(claims["name"], err)
+		if err != nil {
+			fmt.Println(err, "server")
+		}
+	}
+
+	if err2 == nil && login[:4] == "test" {
+		tmpl, err := template.ParseFiles("./ui/html/test.html") // serving the index.html file
+		if err != nil {
+			log.Fatal(err)
+		}
+		tmpl.Execute(w, nil)
+		rows, err := db.Query("SELECT * FROM lms.test_expression WHERE login = $1", login)
+
+		var (
+			Login      string
+			expression string
+			status     string
+			id         int
+		)
+
+		for rows.Next() {
+			rows.Scan(&id, &expression, &status, &Login)
+			io.WriteString(w, html.EscapeString(strconv.Itoa(id)+" "+expression+" "+status)+`<br/>`)
+		}
+	} else {
+		token := NewToken_test()
+		http.SetCookie(w, &http.Cookie{
+			Name:    "token",
+			Value:   token,
+			Expires: time.Now().Add(10 * time.Minute),
+		})
+		tmpl, err := template.ParseFiles("./ui/html/test.html") // serving the index.html file
+		if err != nil {
+			log.Fatal(err)
+		}
+		tmpl.Execute(w, nil)
+		tokenCookie, err2 = r.Cookie("token")
+		const hmacSampleSecret = "super_secret_signature"
+		tokenFromString, err := jwt.Parse(token, func(token *jwt.Token) (interface{}, error) {
+			if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+				fmt.Println("unexpected signing method: %v", token.Header["alg"])
+			}
+
+			return []byte(hmacSampleSecret), nil
+		})
+
+		if err != nil {
+			fmt.Println(err)
+		}
+
+		claims, _ := tokenFromString.Claims.(jwt.MapClaims)
+
+		login, err = redis.String(claims["name"], err)
+		if err != nil {
+			fmt.Println(err, "server")
+		}
+		exps := []string{"2+2", "2/2", "2-2", "2*2", "32", "2*(-23-1)"}
+		// times_exps := [][]int{
+		// 	[]int{1, 1, 1, 1}, []int{1, 1, 1, 1}, []int{1, 1, 1, 1},
+		// 	[]int{1, 1, 1, 1}, []int{1, 1, 1, 1}, []int{1, 1, 1, 1},
+		// }
+		fmt.Println("login", login)
+		_, err = db.Query("SELECT * FROM lms.test_expression WHERE login = $1", login)
+
+		if err == nil {
+			fmt.Println("as")
+			for _, expression_test := range exps {
+				go func(expression string, token string) {
+					server(expression, token)
+				}(expression_test, login)
+			}
+		} else {
+			fmt.Println(err)
+		}
+		time.Sleep(1 * time.Second)
+		rows, err := db.Query("SELECT * FROM lms.test_expression WHERE login = $1", login)
+		var (
+			Login      string
+			expression string
+			status     string
+			id         int
+		)
+		if err == nil {
+			for rows.Next() {
+				rows.Scan(&id, &expression, &status, &Login)
+				io.WriteString(w, html.EscapeString(strconv.Itoa(id)+" "+expression+" "+status)+`<br/>`)
+			}
+		} else {
+			fmt.Println(err)
+		}
+	}
+	test_name++
+	if test_name > 10^4 {
+		test_name = 0
+	}
 }
 
 func main() {
@@ -379,7 +506,7 @@ func main() {
 	mux.HandleFunc("/registr.html", JWT_token)
 	mux.HandleFunc("/time.html", time_New)
 	mux.HandleFunc("/login.html", login)
-	mux.HandleFunc("/test", Test)
+	mux.HandleFunc("/test.html", Test)
 	fileServer := http.FileServer(http.Dir("./ui/static/"))
 
 	mux.Handle("/static/", http.StripPrefix("/static", fileServer))

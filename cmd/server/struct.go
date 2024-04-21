@@ -133,6 +133,24 @@ func CreateBase() bool {
 		panic(err)
 	}
 	_, err = db.Exec(
+		`CREATE TABLE IF NOT EXISTS lms.test_token (
+			login text PRIMARY KEY,
+			token text
+		);`)
+	if err != nil {
+		panic(err)
+	}
+	_, err = db.Exec(
+		`CREATE TABLE IF NOT EXISTS lms.test_expression (
+			id integer PRIMARY KEY,
+			expression text,
+			status text,
+			login text
+		);`)
+	if err != nil {
+		panic(err)
+	}
+	_, err = db.Exec(
 		`CREATE TABLE IF NOT EXISTS lms.first_exp (
 			login text PRIMARY KEY,
 			expression text
@@ -169,64 +187,100 @@ func addendum_otvet(equation string, ID int, login string) { // добавляе
 		log.Fatalf("Error: Unable to connect to database: %v", err)
 	}
 	defer db.Close()
-	rows, err := db.Query("SELECT * FROM lms.user_expression WHERE login = $1", login)
-	if err != nil {
-		log.Println(err, "asdwsadwas")
-	}
-	var (
-		sch        int
-		id         int
-		expression string
-		status     string
-		Login      string
-	)
-	for rows.Next() {
-		rows.Scan(&id, &expression, &status, &Login)
-		sch++
-	}
-	fmt.Println(sch, "sch")
-	if sch >= 10 {
-		_, err := db.Exec("delete from lms.user_expression WHERE status = $1 or status = $2 or status = $3 and login = $4", "ok", "incorrect input", "already in progress", login)
-		if err != nil {
-			log.Println(err, "asdws")
+
+	if utf8.RuneCountInString(login) > 4 {
+		if login[:4] != "test" {
+			rows, err := db.Query("SELECT * FROM lms.user_expression WHERE login = $1", login)
+			if err != nil {
+				log.Println(err, "asdwsadwas")
+			}
+			var (
+				sch        int
+				id         int
+				expression string
+				status     string
+				Login      string
+			)
+			for rows.Next() {
+				rows.Scan(&id, &expression, &status, &Login)
+				sch++
+			}
+			fmt.Println(sch, "sch")
+			if sch >= 10 {
+				_, err := db.Exec("delete from lms.user_expression WHERE status = $1 or status = $2 or status = $3 and login = $4", "ok", "incorrect input", "already in progress", login)
+				if err != nil {
+					log.Println(err, "asdws")
+				}
+				time.Sleep(30 * time.Millisecond)
+			}
+			_, err = db.Exec("insert into lms.user_expression (id, expression, status, login) values ($1, $2, $3, $4)", ID, equation, "adopted", login)
+		} else {
+			_, err = db.Exec("insert into lms.test_expression (id, expression, status, login) values ($1, $2, $3, $4)", ID, equation, "adopted", login)
 		}
-		time.Sleep(30 * time.Millisecond)
+	} else {
+		rows, err := db.Query("SELECT * FROM lms.user_expression WHERE login = $1", login)
+		if err != nil {
+			log.Println(err, "asdwsadwas")
+		}
+		var (
+			sch        int
+			id         int
+			expression string
+			status     string
+			Login      string
+		)
+		for rows.Next() {
+			rows.Scan(&id, &expression, &status, &Login)
+			sch++
+		}
+		fmt.Println(sch, "sch")
+		if sch >= 10 {
+			_, err := db.Exec("delete from lms.user_expression WHERE status = $1 or status = $2 or status = $3 and login = $4", "ok", "incorrect input", "already in progress", login)
+			if err != nil {
+				log.Println(err, "asdws")
+			}
+			time.Sleep(30 * time.Millisecond)
+		}
+		_, err = db.Exec("insert into lms.user_expression (id, expression, status, login) values ($1, $2, $3, $4)", ID, equation, "adopted", login)
 	}
-	_, err = db.Exec("insert into lms.user_expression (id, expression, status, login) values ($1, $2, $3, $4)", ID, equation, "adopted", login)
 }
 
-func addendum_save(equation string, ID, time_OperationU, time_OperationD, time_OperationP, time_OperationM int) { // добавляем выражение в базу агентов
+func addendum_save(equation string, ID, time_OperationU, time_OperationD, time_OperationP, time_OperationM int, login string) { // добавляем выражение в базу агентов
 	db, err := sql.Open("postgres", "user=postgres password="+dbpassword+" host=localhost dbname="+dbname+" sslmode=disable")
 	if err != nil {
 		db.Close()
 		log.Fatalf("Error: Unable to connect to database: %v", err)
 	}
 	defer db.Close()
-	_, err = db.Exec("insert into lms.agent_expression (id, expression) values ($1, $2)", ID, equation)
+
+	_, err = db.Exec("insert into lms.agent_expression (id, expression, login) values ($1, $2, $3)", ID, equation, login)
 	if err != nil {
 		log.Fatalf("Error: Unable to execute update: %v", err)
 	}
 }
 
-func change_otvet(ID int, equation, otvet string, err2 error) { // меняем статус выражения в ответе
+func change_otvet(ID int, equation, otvet string, err2 error, login string) { // меняем статус выражения в ответе
 	db, err := sql.Open("postgres", "user=postgres password="+dbpassword+" host=localhost dbname="+dbname+" sslmode=disable")
 	if err != nil {
 		db.Close()
 		log.Fatalf("Error: Unable to connect to database: %v", err)
 	}
 	defer db.Close()
-	rows, err := db.Query("SELECT * FROM lms.user_expression")
-	if err != nil {
-		log.Println(err, "2")
-	}
-	var id int
-	var expression string
-	var status string
-	var login string
-	mx3.Lock()
-	for rows.Next() {
-		rows.Scan(&id, &expression, &status, &login)
-		if id == ID && equation == expression {
+
+	if utf8.RuneCountInString(login) > 4 {
+		if login[:4] != "test" {
+			// rows, err := db.Query("SELECT * FROM lms.user_expression")
+			// if err != nil {
+			// 	log.Println(err, "2")
+			// }
+			// var id int
+			// var expression string
+			// var status string
+			// var login string
+			// mx3.Lock()
+			// for rows.Next() {
+			// rows.Scan(&id, &expression, &status, &login)
+			// if id == ID && equation == expression {
 			if err2 == nil {
 				_, err = db.Exec("update lms.user_expression set expression = $3, status = $4 where id = $1 and expression = $2", ID, equation, equation+"="+otvet, "ok")
 			} else {
@@ -235,25 +289,42 @@ func change_otvet(ID int, equation, otvet string, err2 error) { // меняем 
 			if err != nil {
 				log.Println(err, "1")
 			}
+			// }
+			// }
+			// mx3.Unlock()
+		} else {
+			if err2 == nil {
+				_, err = db.Exec("update lms.test_expression set expression = $3, status = $4 where id = $1 and expression = $2 and login = $5", ID, equation, equation+"="+otvet, "ok", login)
+			} else {
+				_, err = db.Exec("update lms.test_expression set expression = $3, status = $4 where id = $1 and expression = $2 and login = $5", ID, equation, equation+" "+otvet, fmt.Sprint(err2), login)
+			}
+		}
+	} else {
+		if err2 == nil {
+			_, err = db.Exec("update lms.user_expression set expression = $3, status = $4 where id = $1 and expression = $2", ID, equation, equation+"="+otvet, "ok")
+		} else {
+			_, err = db.Exec("update lms.user_expression set expression = $3, status = $4 where id = $1 and expression = $2", ID, equation, equation+" "+otvet, fmt.Sprint(err2))
+		}
+		if err != nil {
+			log.Println(err, "1")
 		}
 	}
-	mx3.Unlock()
 }
 
-func change_save(equation string, ID int) { // удаляем выражение с базы агентов
+func change_save(equation string, ID int, login string) { // удаляем выражение с базы агентов
 	db, err := sql.Open("postgres", "user=postgres password="+dbpassword+" host=localhost dbname="+dbname+" sslmode=disable")
 	if err != nil {
 		db.Close()
 		log.Fatalf("Error: Unable to connect to database: %v", err)
 	}
 	defer db.Close()
-	_, err = db.Exec("delete from lms.agent_expression where id = $1 and expression = $2", ID, equation)
+	_, err = db.Exec("delete from lms.agent_expression where id = $1 and expression = $2 and login = $3", ID, equation, login)
 	if err != nil {
 		panic(err)
 	}
 }
 
-func proverka() int { // проверяем есть ли у нас данные в базе агентов с запуском программы
+func proverka(login string) int { // проверяем есть ли у нас данные в базе агентов с запуском программы
 	var ID int
 	var expression string
 	var Login string
@@ -279,14 +350,14 @@ func proverka() int { // проверяем есть ли у нас данные
 				if err != nil {
 					panic(err)
 				}
-				go func(equation string, ID, time_OperationU, time_OperationD, time_OperationP, time_OperationM int) {
+				go func(equation string, ID, time_OperationU, time_OperationD, time_OperationP, time_OperationM int, login string) {
 					fmt.Println("ID:", ID, "adopted")
 					otvet, err := Orchestrator(ID, time_OperationU, time_OperationD, time_OperationP, time_OperationM, equation)
 					mx.Lock()
-					change_save(equation, ID)
-					change_otvet(ID, equation, otvet, err)
+					change_save(equation, ID, login)
+					change_otvet(ID, equation, otvet, err, login)
 					mx.Unlock()
-				}(expression, ID, time_OperationU, time_OperationD, time_OperationP, time_OperationM)
+				}(expression, ID, time_OperationU, time_OperationD, time_OperationP, time_OperationM, login)
 				time.Sleep(1 * time.Second)
 			}
 		}
@@ -345,9 +416,10 @@ func max_ID() int { // смотрим какой id самый большой в
 	return id
 }
 
-func check_to_repeat(expression string) bool { // проверка на повторное выражение
+func check_to_repeat(expression string, login string) bool { // проверка на повторное выражение
 	var ID int
 	var equation string
+	var Login string
 	db, err := sql.Open("postgres", "user=postgres password="+dbpassword+" host=localhost dbname="+dbname+" sslmode=disable")
 	if err != nil {
 		db.Close()
@@ -359,8 +431,8 @@ func check_to_repeat(expression string) bool { // проверка на повт
 		panic(err)
 	}
 	for rows.Next() {
-		rows.Scan(&ID, &equation)
-		if equation == expression {
+		rows.Scan(&ID, &equation, &Login)
+		if equation == expression && login == Login {
 			return false
 		}
 	}
@@ -387,6 +459,11 @@ func timeNOW(login string) (U, D, P, M int) { // меняем время вып�
 		log.Fatalf("Error: Unable to connect to database: %v", err)
 	}
 	defer db.Close()
+	if utf8.RuneCountInString(login) > 4 {
+		if login[:4] == "test" {
+			login = "test"
+		}
+	}
 	row := db.QueryRow("SELECT * FROM lms.time WHERE login = $1", login)
 	time_OperationU, time_OperationD, time_OperationP, time_OperationM := 0, 0, 0, 0
 	err = row.Scan(&time_OperationU, &time_OperationD, &time_OperationP, &time_OperationM, &login)

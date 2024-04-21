@@ -6,6 +6,7 @@ import (
 	"log"
 	"net"
 	"os"
+	"unicode/utf8"
 
 	pb "github.com/my-name/grpc-service-example/proto"
 	"google.golang.org/grpc"
@@ -21,16 +22,68 @@ func NewServer() *Server {
 
 func (s *Server) Reception(ctx context.Context, in *pb.ExpressionRequest) (*pb.ExpressionResponse, error) {
 	log.Println(in)
-	id := proverka()
-	id++
-	max := max_ID()
-	fmt.Println(id, max)
-	if id < max {
-		id = max
+	// const hmacSampleSecret = "super_secret_signature"
+	// tokenFromString, err := jwt.Parse(in.Login, func(token *jwt.Token) (interface{}, error) {
+	// 	if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+	// 		panic(fmt.Errorf("unexpected signing method: %v", token.Header["alg"]))
+	// 	}
+
+	// 	return []byte(hmacSampleSecret), nil
+	// })
+
+	// if err != nil {
+	// 	log.Fatal(err)
+	// }
+
+	// claims, _ := tokenFromString.Claims.(jwt.MapClaims)
+
+	id := 1
+	max := 1
+	// login, err := redis.String(claims["name"], err)
+	// if err != nil {
+	// 	fmt.Println(err, "server")
+	// }
+
+	if utf8.RuneCountInString(in.Login) > 4 {
+		if in.Login[:4] != "test" {
+			id = proverka(in.Login)
+			id++
+			max = max_ID()
+			fmt.Println(id, max)
+			if id < max {
+				id = max
+			}
+			id++
+		} else {
+			if in.Expression == "2+2" {
+				id = 1
+			} else if in.Expression == "2/2" {
+				id = 2
+			} else if in.Expression == "2/2" {
+				id = 2
+			} else if in.Expression == "2-2" {
+				id = 3
+			} else if in.Expression == "2*2" {
+				id = 4
+			} else if in.Expression == "32" {
+				id = 5
+			} else if in.Expression == "2*(-23-1)" {
+				id = 6
+			}
+		}
+	} else {
+		id = proverka(in.Login)
+		id++
+		max = max_ID()
+		fmt.Println(id, max)
+		if id < max {
+			id = max
+		}
+		id++
 	}
-	id++
 	fmt.Println(id, max)
 	fmt.Println(id, "id", max)
+
 	ID, equation, err := demon(id, in.Expression, in.Login)
 	return &pb.ExpressionResponse{
 		Id:         float32(ID),
