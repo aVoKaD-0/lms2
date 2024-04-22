@@ -137,7 +137,7 @@ func update_StatusToken_db(token string, login string) {
 		fmt.Println(err, "Newtoken")
 	}
 	go func(token string) {
-		time.Sleep(30 * time.Second)
+		time.Sleep(5 * time.Minute)
 		db, err := sql.Open("postgres", "user=postgres password="+dbpassword+" host=localhost dbname="+dbname+" sslmode=disable")
 		if err != nil {
 			db.Close()
