@@ -2,7 +2,6 @@ package main
 
 import (
 	"errors"
-	"fmt"
 	"sync"
 	"time"
 )
@@ -14,7 +13,7 @@ func demon(id int, expression string, login string) (int, string, error) {
 	er := make(chan error)
 	if check_to_repeat(expression, login) {
 		go func(equation string, ID, time_OperationU, time_OperationD, time_OperationP, time_OperationM int) { // так называемый демон
-			fmt.Println("ID:", ID, "adopted")
+			// fmt.Println("ID:", ID, "adopted")
 			mx.Lock()
 			addendum_otvet(equation, ID, login)
 			addendum_save(equation, ID, time_OperationU, time_OperationD, time_OperationP, time_OperationM, login) // добавление в базу агентов и ответа

@@ -205,7 +205,7 @@ func addendum_otvet(equation string, ID int, login string) { // добавляе
 				rows.Scan(&id, &expression, &status, &Login)
 				sch++
 			}
-			fmt.Println(sch, "sch")
+			// fmt.Println(sch, "sch")
 			if sch >= 10 {
 				_, err := db.Exec("delete from lms.user_expression WHERE status = $1 or status = $2 or status = $3 and login = $4", "ok", "incorrect input", "already in progress", login)
 				if err != nil {
@@ -233,7 +233,7 @@ func addendum_otvet(equation string, ID int, login string) { // добавляе
 			rows.Scan(&id, &expression, &status, &Login)
 			sch++
 		}
-		fmt.Println(sch, "sch")
+		// fmt.Println(sch, "sch")
 		if sch >= 10 {
 			_, err := db.Exec("delete from lms.user_expression WHERE status = $1 or status = $2 or status = $3 and login = $4", "ok", "incorrect input", "already in progress", login)
 			if err != nil {
@@ -351,7 +351,7 @@ func proverka(login string) int { // проверяем есть ли у нас 
 					panic(err)
 				}
 				go func(equation string, ID, time_OperationU, time_OperationD, time_OperationP, time_OperationM int, login string) {
-					fmt.Println("ID:", ID, "adopted")
+					// fmt.Println("ID:", ID, "adopted")
 					otvet, err := Orchestrator(ID, time_OperationU, time_OperationD, time_OperationP, time_OperationM, equation)
 					mx.Lock()
 					change_save(equation, ID, login)
@@ -392,7 +392,7 @@ func max_ID() int { // смотрим какой id самый большой в
 	var status string
 	var id int
 	var login string
-	fmt.Println("sss")
+	// fmt.Println("sss")
 	db, err := sql.Open("postgres", "user=postgres password="+dbpassword+" host=localhost dbname="+dbname+" sslmode=disable")
 	if err != nil {
 		db.Close()
@@ -412,7 +412,7 @@ func max_ID() int { // смотрим какой id самый большой в
 			id = ID
 		}
 	}
-	fmt.Println("ok")
+	// fmt.Println("ok")
 	return id
 }
 

@@ -21,7 +21,7 @@ func NewServer() *Server {
 }
 
 func (s *Server) Reception(ctx context.Context, in *pb.ExpressionRequest) (*pb.ExpressionResponse, error) {
-	log.Println(in)
+	// log.Println(in)
 	// const hmacSampleSecret = "super_secret_signature"
 	// tokenFromString, err := jwt.Parse(in.Login, func(token *jwt.Token) (interface{}, error) {
 	// 	if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
@@ -49,7 +49,7 @@ func (s *Server) Reception(ctx context.Context, in *pb.ExpressionRequest) (*pb.E
 			id = proverka(in.Login)
 			id++
 			max = max_ID()
-			fmt.Println(id, max)
+			// fmt.Println(id, max)
 			if id < max {
 				id = max
 			}
@@ -75,14 +75,14 @@ func (s *Server) Reception(ctx context.Context, in *pb.ExpressionRequest) (*pb.E
 		id = proverka(in.Login)
 		id++
 		max = max_ID()
-		fmt.Println(id, max)
+		// fmt.Println(id, max)
 		if id < max {
 			id = max
 		}
 		id++
 	}
-	fmt.Println(id, max)
-	fmt.Println(id, "id", max)
+	// fmt.Println(id, max)
+	// fmt.Println(id, "id", max)
 
 	ID, equation, err := demon(id, in.Expression, in.Login)
 	return &pb.ExpressionResponse{

@@ -13,7 +13,6 @@ import (
 	"regexp"
 	"strconv"
 	"time"
-	"unicode/utf8"
 
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/gomodule/redigo/redis"
@@ -56,7 +55,7 @@ var grpcClient = pb.NewKalkulatorServiceClient(conn)
 
 func server(expression string, login string) {
 
-	area, err := grpcClient.Reception(context.TODO(), &pb.ExpressionRequest{
+	_, err := grpcClient.Reception(context.TODO(), &pb.ExpressionRequest{
 		Expression: expression,
 		Login:      login,
 	})
@@ -65,7 +64,7 @@ func server(expression string, login string) {
 		log.Println("failed invoking Area: ", err)
 	}
 
-	fmt.Println("Area: ", area.Result)
+	// fmt.Println("Area: ", area.Result)
 }
 
 func client(w http.ResponseWriter, r *http.Request) {
@@ -85,9 +84,9 @@ func client(w http.ResponseWriter, r *http.Request) {
 		tmpl.Execute(w, nil)
 		w.Write([]byte("Спрева войдите в профиль, если вы не зарегестрированны передите на http://localhost:8081/registr.html, иначе на http://localhost:8081/login.html"))
 	} else {
-		fmt.Println(tokenCookie.Value)
+		// fmt.Println(tokenCookie.Value)
 		token := token_db(tokenCookie.Value)
-		fmt.Println(token, tokenCookie.Value, "12312312")
+		// fmt.Println(token, tokenCookie.Value, "12312312")
 		if token != tokenCookie.Value {
 			http.SetCookie(w, &http.Cookie{
 				Name:    "token",
@@ -120,13 +119,13 @@ func client(w http.ResponseWriter, r *http.Request) {
 		}
 		login := login_db(token)
 		first_exp := first_db(login)
-		fmt.Println(first_exp, utf8.RuneCountInString(first_exp))
+		// fmt.Println(first_exp, utf8.RuneCountInString(first_exp))
 		if data.equation != string(first_exp) && data.equation != "" {
 			b := proverks_time(login)
 			if !b {
 				_, err = io.WriteString(w, html.EscapeString("Сперва добавьте время")+`<br/>`)
 			} else {
-				fmt.Println(data.equation, first_exp, string(first_exp))
+				// fmt.Println(data.equation, first_exp, string(first_exp))
 				go func(login string) {
 					server(data.equation, login)
 				}(login)
@@ -305,7 +304,7 @@ func time_New(w http.ResponseWriter, r *http.Request) {
 			}
 			tmpl.Execute(w, nil)
 			login := login_db(token)
-			fmt.Println(login, "login2", token)
+			// fmt.Println(login, "login2", token)
 
 			db, err := sql.Open("postgres", "user=postgres password="+dbpassword+" host=localhost dbname="+dbname+" sslmode=disable")
 			if err != nil {
@@ -460,11 +459,11 @@ func Test(w http.ResponseWriter, r *http.Request) {
 		// 	[]int{1, 1, 1, 1}, []int{1, 1, 1, 1}, []int{1, 1, 1, 1},
 		// 	[]int{1, 1, 1, 1}, []int{1, 1, 1, 1}, []int{1, 1, 1, 1},
 		// }
-		fmt.Println("login", login)
+		// fmt.Println("login", login)
 		_, err = db.Query("SELECT * FROM lms.test_expression WHERE login = $1", login)
 
 		if err == nil {
-			fmt.Println("as")
+			// fmt.Println("as")
 			for _, expression_test := range exps {
 				go func(expression string, token string) {
 					server(expression, token)

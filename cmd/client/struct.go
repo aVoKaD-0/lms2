@@ -108,7 +108,7 @@ func NewToken(login string, password string) string {
 		panic(err)
 	}
 
-	fmt.Println("token string:", tokenString)
+	// fmt.Println("token string:", tokenString)
 
 	_, err = db.Exec("insert into lms.jwt_token (token, login, action) values ($1, $2, $3)", tokenString, login, true)
 	if err != nil {
@@ -187,7 +187,7 @@ func token_db(token string) string {
 		log.Print(err, " entrance")
 	}
 	row.Scan(&Login, &Token, &Action)
-	fmt.Println(Login, Token, Action, token, login)
+	// fmt.Println(Login, Token, Action, token, login)
 	if Token == token && Action == false {
 		// time.Sleep(5 * time.Second)
 		var (
@@ -285,7 +285,7 @@ func first_db(login string) string {
 		expression string
 	)
 	row.Scan(&Login, &expression)
-	fmt.Println(Login, expression, "asd", login)
+	// fmt.Println(Login, expression, "asd", login)
 	return expression
 }
 
@@ -337,7 +337,7 @@ func NewToken_test() string {
 		panic(err)
 	}
 
-	fmt.Println("token string:", tokenString)
+	// fmt.Println("token string:", tokenString)
 
 	_, err = db.Exec("insert into lms.test_token (login, token) values ($1, $2)", "test"+strconv.Itoa(test_name), tokenString)
 	if err != nil {
