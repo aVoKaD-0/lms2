@@ -82,7 +82,7 @@ func client(w http.ResponseWriter, r *http.Request) {
 			log.Println(err, "a")
 		}
 		tmpl.Execute(w, nil)
-		w.Write([]byte("Спрева войдите в профиль, если вы не зарегестрированны передите на http://localhost:8081/registr.html, иначе на http://localhost:8081/login.html"))
+		w.Write([]byte("Спрева войдите в профиль, если вы не зарегистрированы передите на http://localhost:8081/registr.html, иначе на http://localhost:8081/login.html"))
 	} else {
 		// fmt.Println(tokenCookie.Value)
 		token := token_db(tokenCookie.Value)
@@ -218,6 +218,9 @@ func login(w http.ResponseWriter, r *http.Request) {
 
 	Login := r.FormValue("Login")
 	Password := r.FormValue("Password")
+	// Log := r.FormValue("login")
+	exit := r.FormValue("exit")
+	// fmt.Println(Login, Password, Log, exit)
 	if Login != "" && Password != "" && Login != login_login_povrot && Password != login_password_povrot {
 		b := entrance(Login, Password)
 		if b == "ok" {
@@ -254,6 +257,27 @@ func login(w http.ResponseWriter, r *http.Request) {
 		}
 		login_login_povrot = Login
 		login_password_povrot = Password
+	} else if exit == "1" {
+		fmt.Println("a")
+		tokenCookie, err := r.Cookie("token")
+		tmpl, err := template.ParseFiles("./ui/html/login.html") // serving the index.html file
+		if err != nil {
+			log.Fatal(err)
+		}
+		tmpl.Execute(w, nil)
+		w.Write([]byte(""))
+		db, err := sql.Open("postgres", "user=postgres password="+dbpassword+" host=localhost dbname="+dbname+" sslmode=disable")
+		if err != nil {
+			db.Close()
+			log.Fatalf("Error: Unable to connect to database: %v", err)
+		}
+		defer db.Close()
+		_, err = db.Exec("DELETE FROM lms.jwt_token WHERE token = $1", tokenCookie.Value)
+		if err == nil {
+			w.Write([]byte("Успешно вышли из профиля"))
+		} else {
+			w.Write([]byte("Сперва войдите в профиль)"))
+		}
 	} else {
 		tmpl, err := template.ParseFiles("./ui/html/login.html") // serving the index.html file
 		if err != nil {
