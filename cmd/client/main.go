@@ -53,6 +53,7 @@ var IsLetter = regexp.MustCompile(`^[0-9a-zA-Z]`).MatchString
 var conn, _ = grpc.Dial(fmt.Sprintf("%s:%s", "localhost", "5000"), grpc.WithTransportCredentials(insecure.NewCredentials()))
 var grpcClient = pb.NewKalkulatorServiceClient(conn)
 
+// gRPC общение
 func server(expression string, login string) {
 
 	_, err := grpcClient.Reception(context.TODO(), &pb.ExpressionRequest{
@@ -67,6 +68,7 @@ func server(expression string, login string) {
 	// fmt.Println("Area: ", area.Result)
 }
 
+// Сам сервер ввода выражения
 func client(w http.ResponseWriter, r *http.Request) {
 
 	equation := r.FormValue("equation")
@@ -163,6 +165,7 @@ func client(w http.ResponseWriter, r *http.Request) {
 	return
 }
 
+// регистрация нового пользователя
 func JWT_token(w http.ResponseWriter, r *http.Request) {
 	// body, err := ioutil.ReadAll(r.Body)
 	// if err != nil {
@@ -200,6 +203,7 @@ func JWT_token(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// вход в профиль
 func login(w http.ResponseWriter, r *http.Request) {
 	// body, err := ioutil.ReadAll(r.Body)
 	// if err != nil {
@@ -289,6 +293,7 @@ func login(w http.ResponseWriter, r *http.Request) {
 	return
 }
 
+// добавление времени к выражению
 func time_New(w http.ResponseWriter, r *http.Request) {
 	tokenCookie, err := r.Cookie("token")
 	// r.AddCookie(tokenCookie)
@@ -387,6 +392,7 @@ func time_New(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// домашняя страница
 func home(w http.ResponseWriter, r *http.Request) {
 	tmpl, err := template.ParseFiles("./ui/html/home.html") // serving the index.html file
 	if err != nil {
@@ -395,6 +401,7 @@ func home(w http.ResponseWriter, r *http.Request) {
 	tmpl.Execute(w, nil)
 }
 
+// тестовая страница
 func Test(w http.ResponseWriter, r *http.Request) {
 	db, err := sql.Open("postgres", "user=postgres password="+dbpassword+" host=localhost dbname="+dbname+" sslmode=disable")
 	if err != nil {

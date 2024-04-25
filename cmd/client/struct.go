@@ -23,6 +23,7 @@ type time_base struct {
 
 var test_name = 0
 
+// добавление нового пользователя в бд
 func registr(login string, password string) string {
 	var (
 		Login    string
@@ -51,6 +52,7 @@ func registr(login string, password string) string {
 	return "ok"
 }
 
+// вход в профиль, проверка в бд пользователя
 func entrance(login string, password string) string {
 	var (
 		Login    string
@@ -75,6 +77,7 @@ func entrance(login string, password string) string {
 	return "error"
 }
 
+// новый токен при входе в профиль
 func NewToken(login string, password string) string {
 	var Login string
 	db, err := sql.Open("postgres", "user=postgres password="+dbpassword+" host=localhost dbname="+dbname+" sslmode=disable")
@@ -120,6 +123,7 @@ func NewToken(login string, password string) string {
 	return tokenString
 }
 
+// обновление токена на стороне пользователя
 func update_StatusToken_db(token string, login string) {
 	time.Sleep(10 * time.Second)
 	db, err := sql.Open("postgres", "user=postgres password="+dbpassword+" host=localhost dbname="+dbname+" sslmode=disable")
@@ -159,6 +163,7 @@ func update_StatusToken_db(token string, login string) {
 	}(token)
 }
 
+// удаление токена с бд по истечению его срока действия
 func deleteTokenDB() {
 	db, err := sql.Open("postgres", "user=postgres password="+dbpassword+" host=localhost dbname="+dbname+" sslmode=disable")
 	if err != nil {
@@ -170,6 +175,7 @@ func deleteTokenDB() {
 	_, _ = db.Exec("DELETE FROM lms.test_token")
 }
 
+// проверка статуса токена
 func token_db(token string) string {
 	var (
 		Token  string
@@ -226,6 +232,7 @@ func token_db(token string) string {
 	return "error"
 }
 
+// проверка логина по токену
 func login_db(token string) string {
 	db, err := sql.Open("postgres", "user=postgres password="+dbpassword+" host=localhost dbname="+dbname+" sslmode=disable")
 	if err != nil {
@@ -248,6 +255,7 @@ func login_db(token string) string {
 	return "error"
 }
 
+// проверка времени в бд для определенного пользователя
 func proverks_time(login string) bool {
 	db, err := sql.Open("postgres", "user=postgres password="+dbpassword+" host=localhost dbname="+dbname+" sslmode=disable")
 	if err != nil {
@@ -272,6 +280,7 @@ func proverks_time(login string) bool {
 	return false
 }
 
+// повторный ввод выражения для пользователя
 func first_db(login string) string {
 	db, err := sql.Open("postgres", "user=postgres password="+dbpassword+" host=localhost dbname="+dbname+" sslmode=disable")
 	if err != nil {
@@ -289,6 +298,7 @@ func first_db(login string) string {
 	return expression
 }
 
+// обновление повторного ввода выражения для пользователя
 func Updatefirst_db(login string, exp string) {
 	db, err := sql.Open("postgres", "user=postgres password="+dbpassword+" host=localhost dbname="+dbname+" sslmode=disable")
 	if err != nil {
@@ -302,6 +312,7 @@ func Updatefirst_db(login string, exp string) {
 	}
 }
 
+// создание повторного ввода выражения для пользователя
 func NEWfirst_db(login string, exp string) {
 	db, err := sql.Open("postgres", "user=postgres password="+dbpassword+" host=localhost dbname="+dbname+" sslmode=disable")
 	if err != nil {
@@ -315,6 +326,7 @@ func NEWfirst_db(login string, exp string) {
 	}
 }
 
+// новый токен для теста
 func NewToken_test() string {
 	db, err := sql.Open("postgres", "user=postgres password="+dbpassword+" host=localhost dbname="+dbname+" sslmode=disable")
 	if err != nil {
