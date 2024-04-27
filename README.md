@@ -14,8 +14,10 @@
 
 После всего продеяного перейдите 
     
-    в первой консоли в lms2/cmd/client, 
-    во второй в lms2/cmd/server 
+    в первой консоли в lms2/cmd/client (введите cd ./cmd/client), 
+    во второй в lms2/cmd/server (введите cd ./cmd/server)
+
+    
     
 и в обеих пропишите 
 
