@@ -67,7 +67,7 @@ func TestGetUTFLength(t *testing.T) {
 		// запуск отдельного теста
 		t.Run(tc.name, func(t *testing.T) {
 			// тестируем функцию Sum
-			_, _ = server(expression, token)
+			server(expression, token)
 		})
 	}
 }
