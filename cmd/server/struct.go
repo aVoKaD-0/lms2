@@ -110,7 +110,8 @@ func CreateBase() bool {
 		`CREATE TABLE IF NOT EXISTS lms.user_expression (
 			id integer PRIMARY KEY, 
 			expression text NOT NULL,
-			status text
+			status text,
+			login text
 		);`)
 	if err != nil {
 		panic(err)
