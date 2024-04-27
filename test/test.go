@@ -30,7 +30,6 @@ func server(expression string, login string) {
 }
 
 func TestGetUTFLength(t *testing.T) {
-	exps := []string{"2+2", "2/2", "2-2", "2*2", "32", "2*(-23-1)"}
 	cases := []struct {
 		// имя теста
 		name string
@@ -42,14 +41,24 @@ func TestGetUTFLength(t *testing.T) {
 		// тестовые данные №1
 		{
 			name:   "positive values",
-			values: []byte("almazPol"),
-			want:   8,
+			values: "2+2",
+			want:   4,
 		},
 		// тестовые данные №2
 		{
 			name:   "mixed values",
-			values: []byte{0xff, 0xfe, 0xfd},
-			want:   3,
+			values: "2/2",
+			want:   1,
+		},
+		{
+			name:   "mixed",
+			values: "22",
+			want:   0,
+		},
+		{
+			name:   "values",
+			values: "0/0",
+			want:   0,
 		},
 	}
 	// перебор всех тестов

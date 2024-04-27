@@ -6,7 +6,6 @@ import (
 	"log"
 	"net"
 	"os"
-	"unicode/utf8"
 
 	pb "github.com/my-name/grpc-service-example/proto"
 	"google.golang.org/grpc"
@@ -21,7 +20,7 @@ func NewServer() *Server {
 }
 
 func (s *Server) Reception(ctx context.Context, in *pb.ExpressionRequest) (*pb.ExpressionResponse, error) {
-	// log.Println(in)
+	log.Println(in)
 	// const hmacSampleSecret = "super_secret_signature"
 	// tokenFromString, err := jwt.Parse(in.Login, func(token *jwt.Token) (interface{}, error) {
 	// 	if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
@@ -43,46 +42,21 @@ func (s *Server) Reception(ctx context.Context, in *pb.ExpressionRequest) (*pb.E
 	// if err != nil {
 	// 	fmt.Println(err, "server")
 	// }
-
-	if utf8.RuneCountInString(in.Login) > 4 {
-		if in.Login[:4] != "test" {
-			id = proverka(in.Login)
-			id++
-			max = max_ID()
-			// fmt.Println(id, max)
-			if id < max {
-				id = max
-			}
-			id++
-		} else {
-			if in.Expression == "2+2" {
-				id = 1
-			} else if in.Expression == "2/2" {
-				id = 2
-			} else if in.Expression == "2/2" {
-				id = 2
-			} else if in.Expression == "2-2" {
-				id = 3
-			} else if in.Expression == "2*2" {
-				id = 4
-			} else if in.Expression == "32" {
-				id = 5
-			} else if in.Expression == "2*(-23-1)" {
-				id = 6
-			}
-		}
+	id = proverka(in.Login)
+	id++
+	fmt.Println(in.Login, in.Login[:1])
+	if in.Login[:1] == "t" {
+		max = max_idtest(in.Login)
 	} else {
-		id = proverka(in.Login)
-		id++
 		max = max_ID()
-		// fmt.Println(id, max)
-		if id < max {
-			id = max
-		}
-		id++
 	}
 	// fmt.Println(id, max)
-	// fmt.Println(id, "id", max)
+	if id < max {
+		id = max
+	}
+	id++
+	fmt.Println(id, max)
+	fmt.Println(id, "id", max)
 
 	ID, equation, err := demon(id, in.Expression, in.Login)
 	return &pb.ExpressionResponse{

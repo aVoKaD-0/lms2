@@ -338,7 +338,7 @@ func NewToken_test() string {
 	const hmacSampleSecret = "super_secret_signature"
 	now := time.Now()
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
-		"name": "test" + strconv.Itoa(test_name),
+		"name": "t" + "_" + strconv.Itoa(test_name),
 		"nbf":  now.Unix(),
 		"exp":  now.Add(10 * time.Minute).Unix(),
 		"iat":  now.Unix(),

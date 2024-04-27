@@ -85,6 +85,7 @@ func client(w http.ResponseWriter, r *http.Request) {
 		}
 		tmpl.Execute(w, nil)
 		w.Write([]byte("Спрева войдите в профиль, если вы не зарегистрированы передите на http://localhost:8081/registr.html, иначе на http://localhost:8081/login.html"))
+		return
 	} else {
 		// fmt.Println(tokenCookie.Value)
 		token := token_db(tokenCookie.Value)
@@ -107,6 +108,7 @@ func client(w http.ResponseWriter, r *http.Request) {
 			}
 			tmpl.Execute(w, nil)
 			_, err = io.WriteString(w, html.EscapeString("сперва авторизуйтесь"))
+			return
 		} else {
 			tmpl, err := template.ParseFiles("./ui/html/expression.html") // serving the index.html file
 			if err != nil {
@@ -126,6 +128,7 @@ func client(w http.ResponseWriter, r *http.Request) {
 			b := proverks_time(login)
 			if !b {
 				_, err = io.WriteString(w, html.EscapeString("Сперва добавьте время")+`<br/>`)
+				return
 			} else {
 				// fmt.Println(data.equation, first_exp, string(first_exp))
 				go func(login string) {
@@ -195,8 +198,10 @@ func JWT_token(w http.ResponseWriter, r *http.Request) {
 		b := registr(Login, Password)
 		if b == "ok" {
 			w.Write([]byte("пользователь добавлен, можете войти в профиль"))
+			return
 		} else if b == "Already there is" {
 			w.Write([]byte("пользователь уже есть в базе"))
+			return
 		}
 		registr_login_povrot = Login
 		registr_password_povrot = Password
@@ -224,32 +229,44 @@ func login(w http.ResponseWriter, r *http.Request) {
 	Password := r.FormValue("Password")
 	// Log := r.FormValue("login")
 	exit := r.FormValue("exit")
+
 	// fmt.Println(Login, Password, Log, exit)
+	_, err := r.Cookie("token")
 	if Login != "" && Password != "" && Login != login_login_povrot && Password != login_password_povrot {
 		b := entrance(Login, Password)
 		if b == "ok" {
-			tokenString := NewToken(Login, Password)
-			if tokenString == "error" {
-				tmpl, err := template.ParseFiles("./ui/html/login.html") // serving the index.html file
-				if err != nil {
-					log.Fatal(err)
+			if err != nil {
+				tokenString := NewToken(Login, Password)
+				if tokenString == "error" {
+					tmpl, err := template.ParseFiles("./ui/html/login.html") // serving the index.html file
+					if err != nil {
+						log.Fatal(err)
+					}
+					tmpl.Execute(w, nil)
+					w.Write([]byte("к сожалению вход в профиль с таким логином уже совершен"))
+					return
+				} else {
+					cookie := &http.Cookie{
+						Name:    "token",
+						Value:   tokenString,
+						Expires: time.Now().Add(5 * time.Minute),
+					}
+					http.SetCookie(w, cookie)
+					tmpl, err := template.ParseFiles("./ui/html/login.html") // serving the index.html file
+					if err != nil {
+						log.Fatal(err)
+					}
+					tmpl.Execute(w, nil)
+					w.Write([]byte("успешный вход"))
+					return
 				}
-				tmpl.Execute(w, nil)
-				w.Write([]byte("к сожалению вход в профиль с таким логином уже совершен"))
 			} else {
-				cookie := &http.Cookie{
-					Name:    "token",
-					Value:   tokenString,
-					Expires: time.Now().Add(5 * time.Minute),
-				}
-				http.SetCookie(w, cookie)
 				tmpl, err := template.ParseFiles("./ui/html/login.html") // serving the index.html file
 				if err != nil {
 					log.Fatal(err)
 				}
 				tmpl.Execute(w, nil)
-				w.Write([]byte("успешный вход"))
-				return
+				w.Write([]byte("сперва выйдите из профиля"))
 			}
 		} else if b == "error" {
 			tmpl, err := template.ParseFiles("./ui/html/login.html") // serving the index.html file
@@ -258,6 +275,7 @@ func login(w http.ResponseWriter, r *http.Request) {
 			}
 			tmpl.Execute(w, nil)
 			w.Write([]byte("к сожалению такого пользователя не существует, но ты можешь зарегистрироваться"))
+			return
 		}
 		login_login_povrot = Login
 		login_password_povrot = Password
@@ -282,6 +300,7 @@ func login(w http.ResponseWriter, r *http.Request) {
 		} else {
 			w.Write([]byte("Сперва войдите в профиль)"))
 		}
+		return
 	} else {
 		tmpl, err := template.ParseFiles("./ui/html/login.html") // serving the index.html file
 		if err != nil {
@@ -289,8 +308,8 @@ func login(w http.ResponseWriter, r *http.Request) {
 		}
 		tmpl.Execute(w, nil)
 		w.Write([]byte(""))
+		return
 	}
-	return
 }
 
 // добавление времени к выражению
@@ -412,6 +431,7 @@ func Test(w http.ResponseWriter, r *http.Request) {
 
 	tokenCookie, err2 := r.Cookie("token")
 	login := "almaza"
+
 	if err2 == nil {
 		const hmacSampleSecret = "super_secret_signature"
 		tokenFromString, err := jwt.Parse(tokenCookie.Value, func(token *jwt.Token) (interface{}, error) {
@@ -433,8 +453,9 @@ func Test(w http.ResponseWriter, r *http.Request) {
 			fmt.Println(err, "server")
 		}
 	}
+	fmt.Println(login)
 
-	if err2 == nil && login[:4] == "test" {
+	if err2 == nil && login[:1] == "t" {
 		tmpl, err := template.ParseFiles("./ui/html/test.html") // serving the index.html file
 		if err != nil {
 			log.Fatal(err)
@@ -499,6 +520,7 @@ func Test(w http.ResponseWriter, r *http.Request) {
 				go func(expression string, token string) {
 					server(expression, token)
 				}(expression_test, login)
+				time.Sleep(1000 * time.Millisecond)
 			}
 		} else {
 			fmt.Println(err)
