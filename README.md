@@ -10,12 +10,7 @@
 
 так же в консоли директории проекта пропишите:
 
-    go get github.com/lib/pq
-    go get google.golang.org/grpc
-    go get github.com/my-name/grpc-service-example/proto
-    go get github.com/golang-jwt/jwt/v5
-    go get google.golang.org/grpc/credentials/insecure
-    go get github.com/gomodule/redigo/redis
+    go mod tidy
 
 После всего продеяного перейдите 
     
