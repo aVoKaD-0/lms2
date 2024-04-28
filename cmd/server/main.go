@@ -7,7 +7,10 @@ import (
 	"net"
 	"os"
 
+	calc "github.com/my-name/grpc-service-example/cmd/server/calc"
+
 	pb "github.com/my-name/grpc-service-example/proto"
+
 	"google.golang.org/grpc"
 )
 
@@ -42,13 +45,13 @@ func (s *Server) Reception(ctx context.Context, in *pb.ExpressionRequest) (*pb.E
 	// if err != nil {
 	// 	fmt.Println(err, "server")
 	// }
-	id = proverka(in.Login)
+	id = calc.Proverka(in.Login)
 	id++
 	fmt.Println(in.Login, in.Login[:1])
 	if in.Login[:1] == "t" {
-		max = max_idtest(in.Login)
+		max = calc.Max_idtest(in.Login)
 	} else {
-		max = max_ID()
+		max = calc.Max_ID()
 	}
 	// fmt.Println(id, max)
 	if id < max {
@@ -68,7 +71,7 @@ func (s *Server) Reception(ctx context.Context, in *pb.ExpressionRequest) (*pb.E
 }
 
 func main() {
-	CreateBase()
+	calc.CreateBase()
 	host := "localhost"
 	port := "5000"
 
